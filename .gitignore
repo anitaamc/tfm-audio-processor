@@ -1,0 +1,4 @@
+# Ignorar archivos y directorios generados por IDEs y herramientas de desarrollo
+.idea/
+__pycache__/
+

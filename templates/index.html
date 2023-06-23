@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detector de Palabras Clave</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let mediaRecorder;
+        let chunks = [];
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    mediaRecorder = new MediaRecorder(stream);
+
+                    mediaRecorder.ondataavailable = function(e) {
+                        chunks.push(e.data);
+                    }
+
+                    mediaRecorder.onstop = function() {
+                        let blob = new Blob(chunks, { type: 'audio/wav' });
+                        let url = URL.createObjectURL(blob);
+                        let audio = document.getElementById('audio');
+                        audio.src = url;
+                        audio.controls = true;
+
+                        let formData = new FormData();
+                        formData.append('keyword', document.getElementById('keyword').value);
+                        formData.append('audio', blob, 'audio.wav');
+
+                        $.ajax({
+                            url: '/upload',
+                            type: 'POST',
+                            data: formData,
+                            contentType: false,
+                            processData: false,
+                            success: function(response) {
+                                document.getElementById('result').innerHTML = response;
+                            }
+                        });
+                    }
+
+                    mediaRecorder.start();
+                })
+                .catch(function(err) {
+                    console.log('No se pudo acceder al dispositivo de audio: ', err);
+                });
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                chunks = [];
+            }
+        }
+    </script>
+</head>
+<body>
+<h1>Detector de Palabras Clave</h1>
+<label for="keyword">Palabras Clave:</label>
+<input type="text" id="keyword" required><br><br>
+<button onclick="startRecording()">Iniciar Prueba</button>
+<button onclick="stopRecording()">Detener</button>
+<audio id="audio"></audio>
+<p id="result"></p>
+</body>
+</html>

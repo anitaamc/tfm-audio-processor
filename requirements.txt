@@ -1,0 +1,6 @@
+Flask==2.0.1
+numpy==1.19.5
+tensorflow
+pyaudio==0.2.11
+librosa==0.8.1
+deepsearch
