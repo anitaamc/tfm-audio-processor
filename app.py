@@ -1,46 +1,48 @@
+from flask import Flask, render_template, request, jsonify
 import os
-import speech_recognition as sr
-from flask import Flask, render_template, request
+from audio_processing import process_audio
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
 
-def detect_keyword(audio_path, keyword):
-    r = sr.Recognizer()
+keywords = ['pepito']
 
-    with sr.AudioFile(audio_path) as source:
-        audio = r.record(source)  # Leer el archivo de audio
+# Variable para almacenar el audio grabado
+recorded_audio = None
 
-    try:
-        text = r.recognize_google(audio, language='es-ES')  # Reconocer el texto del audio
-        if keyword in text:
-            return True
-    except sr.UnknownValueError:
-        pass
-
-    return False
-
+# Ruta principal para cargar la interfaz web
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    keyword = request.form['keyword']
-    audio_file = request.files['audio']
-    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], 'audio.wav')
-    audio_file.save(audio_path)
-
-    result = detect_keyword(audio_path, keyword)
-
-    if result:
-        message = "Simulando activación del modo emergencia. Llamando a emergencias. Cerrando puertas y cajas fuertes. Tomando medidas preestablecidas para el estado de emergencia."
+# Ruta para sobrescribir las palabras clave
+@app.route('/overwrite_keywords', methods=['POST'])
+def overwrite_keywords():
+    global keywords
+    new_keywords = request.json.get('keywords', [])
+    if new_keywords:
+        keywords = new_keywords
+        return jsonify({'message': 'Palabras clave sobreescritas correctamente'})
     else:
-        message = "No se detectaron las palabras clave."
+        return jsonify({'message': 'Error al sobrescribir las palabras clave'})
 
-    os.remove(audio_path)  # Eliminar el archivo de audio después de su procesamiento
 
-    return render_template('result.html', message=message)
+# Ruta para iniciar la grabación de audio
+@app.route('/start_recording', methods=['POST'])
+def start_recording():
+    global recorded_audio
+    recorded_audio = None
+    return jsonify({'message': 'Grabando...'})
+
+@app.route('/save_audio', methods=['POST'])
+def save_audio():
+    global recorded_audio
+    audio_file = 'audio.wav'
+    if os.path.exists(audio_file):
+        os.remove(audio_file)
+    audio_data = request.files['audio']
+    audio_data.save(audio_file)
+    return process_audio(audio_file)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
