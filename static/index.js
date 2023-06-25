@@ -19,7 +19,7 @@ function startRecording() {
             };
 
             mediaRecorder.onstop = function() {
-                const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                const audioBlob = new Blob(chunks, { type: 'audio/wav' });
 
                 const formData = new FormData();
                 formData.append('audio', audioBlob, 'audio.wav');
